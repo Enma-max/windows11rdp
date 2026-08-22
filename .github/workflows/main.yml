@@ -27,7 +27,7 @@ jobs:
 
     - name: Download Ngrok
       run: |
-        Invoke-WebRequest -Uri "https://download.ngrok.com/windows/amd64/ngrok.zip" -OutFile ngrok.zip
+        curl -L -o ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip
         Expand-Archive -Path ngrok.zip -DestinationPath .
 
     - name: Start Ngrok
@@ -59,7 +59,7 @@ jobs:
           Write-Host "Pass: ${{ github.event.inputs.password }}"
           Write-Host "========================================="
         } else {
-          Write-Host "Tunnel not found. Check logs."
+          Write-Host "Tunnel not found. Check ngrok logs."
         }
 
     - name: Keep Alive
