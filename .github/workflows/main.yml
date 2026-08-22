@@ -25,9 +25,9 @@ jobs:
         $password = "${{ github.event.inputs.password }}" | ConvertTo-SecureString -AsPlainText -Force
         Set-LocalUser -Name "runneradmin" -Password $password
 
-    - name: Download Ngrok
+    - name: Download Ngrok (Latest)
       run: |
-        Invoke-WebRequest -Uri "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile ngrok.zip
+        Invoke-WebRequest -Uri "https://bin.equinox.io/a/dc9Wde74r2k/ngrok-v3-stable-windows-amd64.zip" -OutFile ngrok.zip
         Expand-Archive -Path ngrok.zip -DestinationPath .
 
     - name: Start Ngrok
