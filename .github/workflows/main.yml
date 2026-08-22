@@ -34,20 +34,46 @@ jobs:
     - name: Start Ngrok
       run: |
         .\ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-        Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389 --log=stdout" -WindowStyle Hidden
+        Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden -PassThru
+        Start-Sleep -Seconds 5
 
     - name: Get RDP Info
       run: |
-        Start-Sleep -Seconds 15
-        $ngrok_api = Invoke-WebRequest -Uri "http://localhost:4040/api/tunnels" -UseBasicParsing | ConvertFrom-Json
-        $public_url = $ngrok_api.tunnels[0].public_url
-        $ip_port = $public_url -replace "tcp://", ""
-        Write-Host "========================================="
-        Write-Host "RDP INFO:"
-        Write-Host "Address: $ip_port"
-        Write-Host "User: runneradmin"
-        Write-Host "Pass: ${{ github.event.inputs.password }}"
-        Write-Host "========================================="
+        $retries = 0
+        $maxRetries = 10
+        $tunnel = $null
+        
+        while ($retries -lt $maxRetries -and $tunnel -eq $null) {
+          try {
+            $response = Invoke-WebRequest -Uri "http://localhost:4040/api/tunnels" -UseBasicParsing -ErrorAction Stop
+            $data = $response.Content | ConvertFrom-Json
+            $tunnel = $data.tunnels | Where-Object { $_.proto -eq "tcp" } | Select-Object -First 1
+          } catch {
+            $retries++
+            Start-Sleep -Seconds 3
+          }
+        }
+        
+        if ($tunnel -ne $null) {
+          $public_url = $tunnel.public_url
+          $host_port = $public_url -replace "tcp://", ""
+          $host = ($host_port -split ":")[0]
+          $port = ($host_port -split ":")[1]
+          
+          Write-Host "========================================="
+          Write-Host "RDP INFO:"
+          Write-Host "Host: $host"
+          Write-Host "Port: $port"
+          Write-Host "User: runneradmin"
+          Write-Host "Pass: ${{ github.event.inputs.password }}"
+          Write-Host "========================================="
+          Write-Host "Connection String: $host:$port"
+        } else {
+          Write-Host "========================================="
+          Write-Host "ERROR: Ngrok tunnel not found."
+          Write-Host "========================================="
+          exit 1
+        }
 
     - name: Keep Alive
       run: |
